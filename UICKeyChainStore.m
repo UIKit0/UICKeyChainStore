@@ -22,7 +22,7 @@ static NSString *defaultService;
 @synthesize accessGroup;
 
 + (void)initialize {
-    defaultService = [[[NSBundle mainBundle] bundleIdentifier] retain];
+    defaultService = [[NSBundle mainBundle] bundleIdentifier];
 }
 
 + (NSString *)stringForKey:(NSString *)key {
@@ -36,7 +36,7 @@ static NSString *defaultService;
 + (NSString *)stringForKey:(NSString *)key service:(NSString *)service accessGroup:(NSString *)accessGroup {
     NSData *data = [self dataForKey:key service:service accessGroup:accessGroup];
     if (data) {
-        return [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+        return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     }
     return nil;
 }
@@ -72,12 +72,12 @@ static NSString *defaultService;
 	}
     
 	NSMutableDictionary* query = [NSMutableDictionary dictionary];
-	[query setObject:kSecClassGenericPassword forKey:kSecClass];
-	[query setObject:(id)kCFBooleanTrue forKey:kSecReturnData];
-	[query setObject:kSecMatchLimitOne forKey:kSecMatchLimit];
-	[query setObject:service forKey:kSecAttrService];
-    [query setObject:key forKey:kSecAttrGeneric];
-    [query setObject:key forKey:kSecAttrAccount];
+	[query setObject:(__bridge id)(kSecClassGenericPassword) forKey:(__bridge id<NSCopying>)(kSecClass)];
+	[query setObject:(id)kCFBooleanTrue forKey:(__bridge id<NSCopying>)(kSecReturnData)];
+	[query setObject:(__bridge id)(kSecMatchLimitOne) forKey:(__bridge id<NSCopying>)(kSecMatchLimit)];
+	[query setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
+    [query setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrGeneric)];
+    [query setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrAccount)];
 #if !TARGET_IPHONE_SIMULATOR
     if (accessGroup) {
         [query setObject:accessGroup forKey:kSecAttrAccessGroup];
@@ -85,12 +85,14 @@ static NSString *defaultService;
 #endif
     
 	NSData *data = nil;
-	OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, (CFTypeRef *)&data);
+    CFTypeRef *localData = NULL;
+	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&localData);
 	if (status != errSecSuccess) {
         return nil;
 	}
+    data = objc_retainedObject(localData);
     
-    return [data autorelease];
+    return data;
 }
 
 + (void)setData:(NSData *)data forKey:(NSString *)key {
@@ -111,23 +113,23 @@ static NSString *defaultService;
 	}
 	
 	NSMutableDictionary *query = [NSMutableDictionary dictionary];
-	[query setObject:kSecClassGenericPassword forKey:kSecClass];
-	[query setObject:service forKey:kSecAttrService];
-    [query setObject:key forKey:kSecAttrGeneric];
-    [query setObject:key forKey:kSecAttrAccount];
+	[query setObject:(__bridge id)(kSecClassGenericPassword) forKey:(__bridge id<NSCopying>)(kSecClass)];
+	[query setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
+    [query setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrGeneric)];
+    [query setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrAccount)];
 #if !TARGET_IPHONE_SIMULATOR
     if (accessGroup) {
         [query setObject:accessGroup forKey:kSecAttrAccessGroup];
     }
 #endif
     
-	OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, NULL);
+	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, NULL);
 	if (status == errSecSuccess) {
         if (data) {
             NSMutableDictionary *attributesToUpdate = [NSMutableDictionary dictionary];
-            [attributesToUpdate setObject:data forKey:kSecValueData];
+            [attributesToUpdate setObject:data forKey:(__bridge id<NSCopying>)(kSecValueData)];
             
-            status = SecItemUpdate((CFDictionaryRef)query, (CFDictionaryRef)attributesToUpdate);
+            status = SecItemUpdate((__bridge CFDictionaryRef)query, (__bridge CFDictionaryRef)attributesToUpdate);
             if (status != errSecSuccess) {
                 NSLog(@"%s|SecItemUpdate: error(%ld)", __func__, status);
             }
@@ -136,18 +138,18 @@ static NSString *defaultService;
         }
 	} else if (status == errSecItemNotFound) {
 		NSMutableDictionary *attributes = [NSMutableDictionary dictionary];
-		[attributes setObject:kSecClassGenericPassword forKey:kSecClass];
-        [attributes setObject:service forKey:kSecAttrService];
-        [attributes setObject:key forKey:kSecAttrGeneric];
-        [attributes setObject:key forKey:kSecAttrAccount];
-		[attributes setObject:data forKey:kSecValueData];
+		[attributes setObject:(__bridge id)(kSecClassGenericPassword) forKey:(__bridge id<NSCopying>)(kSecClass)];
+        [attributes setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
+        [attributes setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrGeneric)];
+        [attributes setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrAccount)];
+		[attributes setObject:data forKey:(__bridge id<NSCopying>)(kSecValueData)];
 #if !TARGET_IPHONE_SIMULATOR
         if (accessGroup) {
             [attributes setObject:accessGroup forKey:kSecAttrAccessGroup];
         }
 #endif
 		
-		status = SecItemAdd((CFDictionaryRef)attributes, NULL);
+		status = SecItemAdd((__bridge CFDictionaryRef)attributes, NULL);
 		if (status != errSecSuccess) {
 			NSLog(@"%s|SecItemAdd: error(%ld)", __func__, status);
 		}		
@@ -174,17 +176,17 @@ static NSString *defaultService;
 	}
 	
 	NSMutableDictionary *itemToDelete = [NSMutableDictionary dictionary];
-	[itemToDelete setObject:kSecClassGenericPassword forKey:kSecClass];
-	[itemToDelete setObject:service forKey:kSecAttrService];
-    [itemToDelete setObject:key forKey:kSecAttrGeneric];
-    [itemToDelete setObject:key forKey:kSecAttrAccount];
+	[itemToDelete setObject:(__bridge id)(kSecClassGenericPassword) forKey:(__bridge id<NSCopying>)(kSecClass)];
+	[itemToDelete setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
+    [itemToDelete setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrGeneric)];
+    [itemToDelete setObject:key forKey:(__bridge id<NSCopying>)(kSecAttrAccount)];
 #if !TARGET_IPHONE_SIMULATOR
     if (accessGroup) {
         [itemToDelete setObject:accessGroup forKey:kSecAttrAccessGroup];
     }
 #endif
 	
-	OSStatus status = SecItemDelete((CFDictionaryRef)itemToDelete);
+	OSStatus status = SecItemDelete((__bridge CFDictionaryRef)itemToDelete);
 	if (status != errSecSuccess && status != errSecItemNotFound) {
 		NSLog(@"%s|SecItemDelete: error(%ld)", __func__, status);
 	}
@@ -196,11 +198,11 @@ static NSString *defaultService;
 	}
 	
 	NSMutableDictionary *query = [NSMutableDictionary dictionary];
-	[query setObject:kSecClassGenericPassword forKey:kSecClass];
-	[query setObject:(id)kCFBooleanTrue forKey:kSecReturnAttributes];
-	[query setObject:(id)kCFBooleanTrue forKey:kSecReturnData];
-	[query setObject:kSecMatchLimitAll forKey:kSecMatchLimit];
-	[query setObject:service forKey:kSecAttrService];
+	[query setObject:(__bridge id)(kSecClassGenericPassword) forKey:(__bridge id<NSCopying>)(kSecClass)];
+	[query setObject:(id)kCFBooleanTrue forKey:(__bridge id<NSCopying>)(kSecReturnAttributes)];
+	[query setObject:(id)kCFBooleanTrue forKey:(__bridge id<NSCopying>)(kSecReturnData)];
+	[query setObject:CFBridgingRelease(kSecMatchLimitAll) forKey:(__bridge id<NSCopying>)(kSecMatchLimit)];
+	[query setObject:service forKey:(__bridge id<NSCopying>)(kSecAttrService)];
 #if !TARGET_IPHONE_SIMULATOR
     if (accessGroup) {
         [query setObject:accessGroup forKey:kSecAttrAccessGroup];
@@ -208,9 +210,9 @@ static NSString *defaultService;
 #endif
 	
 	CFArrayRef result = nil;
-	OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, (CFTypeRef *)&result);
+	OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&result);
 	if (status == errSecSuccess || status == errSecItemNotFound) {
-		return [(NSArray *)result autorelease];
+		return (__bridge NSArray *)result ;
 	} else {
 		NSLog(@"%s|SecItemCopyMatching: error(%ld)", __func__, status);
 		return nil;
@@ -229,9 +231,9 @@ static NSString *defaultService;
     NSArray *items = [UICKeyChainStore itemsForService:service accessGroup:accessGroup];    
     for (NSDictionary *item in items) {
         NSMutableDictionary *itemToDelete = [NSMutableDictionary dictionaryWithDictionary:item];
-        [itemToDelete setObject:kSecClassGenericPassword forKey:kSecClass];
+        [itemToDelete setObject:(__bridge id)(kSecClassGenericPassword) forKey:(__bridge id<NSCopying>)(kSecClass)];
         
-        OSStatus status = SecItemDelete((CFDictionaryRef)itemToDelete);
+        OSStatus status = SecItemDelete((__bridge CFDictionaryRef)itemToDelete);
         if (status != errSecSuccess) {
             NSLog(@"%s|SecItemDelete: error(%ld)", __func__, status);
             NSLog(@"%@", itemToDelete);
@@ -242,15 +244,15 @@ static NSString *defaultService;
 #pragma mark -
 
 + (UICKeyChainStore *)keyChainStore {
-    return [[[self alloc] initWithService:defaultService] autorelease];
+    return [[self alloc] initWithService:defaultService];
 }
 
 + (UICKeyChainStore *)keyChainStoreWithService:(NSString *)service {
-    return [[[self alloc] initWithService:service] autorelease];
+    return [[self alloc] initWithService:service];
 }
 
 + (UICKeyChainStore *)keyChainStoreWithService:(NSString *)service accessGroup:(NSString *)accessGroup {
-    return [[[self alloc] initWithService:service accessGroup:accessGroup] autorelease];
+    return [[self alloc] initWithService:service accessGroup:accessGroup];
 }
 
 - (id)init {
@@ -276,27 +278,23 @@ static NSString *defaultService;
         }
 		
         NSMutableDictionary *query = [NSMutableDictionary dictionaryWithDictionary:itemsToUpdate];
-        [query setObject:(id)kSecMatchLimitAll forKey:(id)kSecMatchLimit];
-        [query setObject:(id)kCFBooleanTrue forKey:(id)kSecReturnAttributes];
+        [query setObject:(__bridge id)kSecMatchLimitAll forKey:(__bridge id)kSecMatchLimit];
+        [query setObject:(id)kCFBooleanTrue forKey:(__bridge id)kSecReturnAttributes];
         
         NSMutableDictionary *result = nil;
-        OSStatus status = SecItemCopyMatching((CFDictionaryRef)query, (CFTypeRef *)&result);
+        CFTypeRef localResult = NULL;
+        OSStatus status = SecItemCopyMatching((__bridge CFDictionaryRef)query, (CFTypeRef *)&localResult);
         if (status == errSecSuccess) {
+            result = objc_retainedObject(localResult);
             itemsToUpdate = [[NSMutableDictionary alloc] initWithDictionary:result];
 		} else {
             itemsToUpdate = [[NSMutableDictionary alloc] init];
         }
-        [result release];
+        
     }
     return self;
 }
 
-- (void)dealloc {
-    [service release];
-    [accessGroup release];
-    [itemsToUpdate release];
-    [super dealloc];
-}
 
 #pragma mark -
 
@@ -305,11 +303,11 @@ static NSString *defaultService;
     NSMutableArray *list = [NSMutableArray arrayWithCapacity:[items count]];    
     for (NSDictionary *attributes in items) {
         NSMutableDictionary *attrs = [NSMutableDictionary dictionary];
-        [attrs setObject:[attributes objectForKey:kSecAttrService] forKey:@"Service"];
-        [attrs setObject:[attributes objectForKey:kSecAttrAccount] forKey:@"Account"];
-        [attrs setObject:[attributes objectForKey:kSecAttrAccessGroup] forKey:@"AccessGroup"];
-        NSData *data = [attributes objectForKey:kSecValueData];
-        NSString *string = [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+        [attrs setObject:[attributes objectForKey:(__bridge id)(kSecAttrService)] forKey:@"Service"];
+        [attrs setObject:[attributes objectForKey:(__bridge id)(kSecAttrAccount)] forKey:@"Account"];
+        [attrs setObject:[attributes objectForKey:(__bridge id)(kSecAttrAccessGroup)] forKey:@"AccessGroup"];
+        NSData *data = [attributes objectForKey:(__bridge id)(kSecValueData)];
+        NSString *string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
         if (string) {
             [attrs setObject:string forKey:@"Value"];
         } else {
@@ -329,7 +327,7 @@ static NSString *defaultService;
 - (NSString *)stringForKey:(id)key {
     NSData *data = [self dataForKey:key];
     if (data) {
-        return [[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] autorelease];
+        return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     }
     return nil;
 }
